@@ -43,7 +43,6 @@ wards<- st_read(here("London-wards-2018/London-wards-2018_ESRI/London_Ward_CityM
  )+ tm_title("Proportion of fruit and vegetable purchases in London") + tm_compass() + tm_scalebar() + tm_layout(frame = FALSE, bg.color = "grey")
 ```
 
-### Map 2: Sugary Soft Drink Purchases (Unhealthy)
 ```{r}
 # This map applies the same styling to sugary soft drink purchases.
 # The color palette is changed to "brewer.reds" for visual contrast.
@@ -60,7 +59,6 @@ tm_shape(tesco_and_wards) +
   tm_layout(frame = FALSE, bg.color = "grey")
 ```
 
-### Map 3: Ready-Made Meal Purchases (Unhealthy)
 ```{r}
 # This map applies the same styling to ready-made meal purchases.
 # The color palette is changed to "brewer.oranges" for visual contrast.
@@ -77,7 +75,6 @@ tm_shape(tesco_and_wards) +
   tm_layout(frame = FALSE, bg.color = "grey")
 ```
 
-### Map 4: Sweets Purchases (Unhealthy)
 ```{r}
 # This map applies the same styling to sweets purchases.
 # The color palette is changed to "brewer.purples" for visual contrast.
@@ -92,4 +89,5 @@ tm_shape(tesco_and_wards) +
   tm_compass() + 
   tm_scalebar() + 
   tm_layout(frame = FALSE, bg.color = "grey")
+
 ```
