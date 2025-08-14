@@ -1,0 +1,95 @@
+---
+title: "Untitled"
+author: "workshop"
+date: "2025-06-13"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+ pacman::p_load(tidyverse, dplyr, readr, here, sf, tmap)
+```
+
+
+```{r}
+hello <- read_csv("year_osward_grocery.csv")  %>%
+  rename(ward_code = area_id)
+hello
+```
+
+
+
+
+```{r}
+wards<- st_read(here("London-wards-2018/London-wards-2018_ESRI/London_Ward_CityMerged.shp"))  %>%
+ rename(ward_code = GSS_CODE, ward_name = NAME)
+
+
+```
+```{r}
+ tesco_and_wards <- inner_join(wards, hello)
+
+```
+```{r}
+ tm_shape(tesco_and_wards) + tm_polygons(fill = "f_fruit_veg", 
+                                         fill.chart = tm_chart_histogram(),
+                                         fill.legend = tm_legend(title = "Proportion", reverse = TRUE),
+                                         fill.scale = tm_scale(values = "brewer.greens")
+ )+ tm_title("Proportion of fruit and vegetable purchases in London") + tm_compass() + tm_scalebar() + tm_layout(frame = FALSE, bg.color = "grey")
+```
+
+### Map 2: Sugary Soft Drink Purchases (Unhealthy)
+```{r}
+# This map applies the same styling to sugary soft drink purchases.
+# The color palette is changed to "brewer.reds" for visual contrast.
+tm_shape(tesco_and_wards) + 
+  tm_polygons(
+    "f_soft_drinks",
+    fill.chart = tm_chart_histogram(),
+    fill.legend = tm_legend(title = "Proportion", reverse = TRUE),
+    fill.scale = tm_scale(values = "brewer.reds")
+  ) + 
+  tm_title("Proportion of sugary soft drink purchases in London") + 
+  tm_compass() + 
+  tm_scalebar() + 
+  tm_layout(frame = FALSE, bg.color = "grey")
+```
+
+### Map 3: Ready-Made Meal Purchases (Unhealthy)
+```{r}
+# This map applies the same styling to ready-made meal purchases.
+# The color palette is changed to "brewer.oranges" for visual contrast.
+tm_shape(tesco_and_wards) + 
+  tm_polygons(
+    "f_readymade",
+    fill.chart = tm_chart_histogram(),
+    fill.legend = tm_legend(title = "Proportion", reverse = TRUE),
+    fill.scale = tm_scale(values = "brewer.oranges")
+  ) + 
+  tm_title("Proportion of ready-made meal purchases in London") + 
+  tm_compass() + 
+  tm_scalebar() + 
+  tm_layout(frame = FALSE, bg.color = "grey")
+```
+
+### Map 4: Sweets Purchases (Unhealthy)
+```{r}
+# This map applies the same styling to sweets purchases.
+# The color palette is changed to "brewer.purples" for visual contrast.
+tm_shape(tesco_and_wards) + 
+  tm_polygons(
+    "f_sweets",
+    fill.chart = tm_chart_histogram(),
+    fill.legend = tm_legend(title = "Proportion", reverse = TRUE),
+    fill.scale = tm_scale(values = "brewer.purples")
+  ) + 
+  tm_title("Proportion of sweets purchases in London") + 
+  tm_compass() + 
+  tm_scalebar() + 
+  tm_layout(frame = FALSE, bg.color = "grey")
+```
