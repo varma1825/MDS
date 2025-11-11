@@ -7,6 +7,7 @@ output:
   html_document: default
 ---
 
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -43,9 +44,9 @@ wards<- st_read(here("London-wards-2018/London-wards-2018_ESRI/London_Ward_CityM
  )+ tm_title("Proportion of fruit and vegetable purchases in London") + tm_compass() + tm_scalebar() + tm_layout(frame = FALSE, bg.color = "grey")
 ```
 
+### Map 2: Sugary Soft Drink Purchases (Unhealthy)
 ```{r}
-# This map applies the same styling to sugary soft drink purchases.
-# The color palette is changed to "brewer.reds" for visual contrast.
+
 tm_shape(tesco_and_wards) + 
   tm_polygons(
     "f_soft_drinks",
@@ -59,9 +60,9 @@ tm_shape(tesco_and_wards) +
   tm_layout(frame = FALSE, bg.color = "grey")
 ```
 
+### Map 3: Ready-Made Meal Purchases (Unhealthy)
 ```{r}
-# This map applies the same styling to ready-made meal purchases.
-# The color palette is changed to "brewer.oranges" for visual contrast.
+
 tm_shape(tesco_and_wards) + 
   tm_polygons(
     "f_readymade",
@@ -75,9 +76,9 @@ tm_shape(tesco_and_wards) +
   tm_layout(frame = FALSE, bg.color = "grey")
 ```
 
+### Map 4: Sweets Purchases (Unhealthy)
 ```{r}
-# This map applies the same styling to sweets purchases.
-# The color palette is changed to "brewer.purples" for visual contrast.
+
 tm_shape(tesco_and_wards) + 
   tm_polygons(
     "f_sweets",
@@ -89,5 +90,238 @@ tm_shape(tesco_and_wards) +
   tm_compass() + 
   tm_scalebar() + 
   tm_layout(frame = FALSE, bg.color = "grey")
+```
+
+
+
+
+
+
+
+```{r}
+
+library(tidyverse)
+
+grocery_data <- read_csv("year_osward_grocery.csv")
+
+eatwell_food_groups <- list(
+  Fruit_and_Vegetables    = "f_fruit_veg",
+  Starchy_Carbohydrates   = "f_grains",
+  Protein_Foods           = c("f_poultry", "f_meat_red", "f_fish", "f_eggs"),
+  Dairy_and_Alternatives  = "f_dairy",
+  Oils_and_Spreads        = "f_fats_oils",
+  Foods_High_in_Fat_Sugar = c("f_sweets", "f_readymade", "f_sauces", "f_soft_drinks")
+)
+
+eatwell_recommendations <- c(
+  Fruit_and_Vegetables = 0.33,
+  Starchy_Carbohydrates = 0.33,
+  Protein_Foods = 0.12,
+  Dairy_and_Alternatives = 0.15,
+  Oils_and_Spreads = 0.07,
+  Foods_High_in_Fat_Sugar = 0.05
+)
+
+grocery_data <- grocery_data %>%
+  mutate(
+    Fruit_and_Vegetables    = rowSums(across(all_of(eatwell_food_groups$Fruit_and_Vegetables)), na.rm = TRUE),
+    Starchy_Carbohydrates   = rowSums(across(all_of(eatwell_food_groups$Starchy_Carbohydrates)), na.rm = TRUE),
+    Protein_Foods           = rowSums(across(all_of(eatwell_food_groups$Protein_Foods)), na.rm = TRUE),
+    Dairy_and_Alternatives  = rowSums(across(all_of(eatwell_food_groups$Dairy_and_Alternatives)), na.rm = TRUE),
+    Oils_and_Spreads        = rowSums(across(all_of(eatwell_food_groups$Oils_and_Spreads)), na.rm = TRUE),
+    Foods_High_in_Fat_Sugar = rowSums(across(all_of(eatwell_food_groups$Foods_High_in_Fat_Sugar)), na.rm = TRUE)
+  ) %>%
+  mutate(
+    total_basket = Fruit_and_Vegetables + Starchy_Carbohydrates + Protein_Foods +
+                   Dairy_and_Alternatives + Oils_and_Spreads + Foods_High_in_Fat_Sugar
+  ) %>%
+  mutate(across(
+    c(Fruit_and_Vegetables, Starchy_Carbohydrates, Protein_Foods,
+      Dairy_and_Alternatives, Oils_and_Spreads, Foods_High_in_Fat_Sugar),
+    ~ .x / total_basket
+  )) %>%
+  mutate(
+    euclidean_distance = sqrt(
+      (Fruit_and_Vegetables - eatwell_recommendations["Fruit_and_Vegetables"])^2 +
+      (Starchy_Carbohydrates - eatwell_recommendations["Starchy_Carbohydrates"])^2 +
+      (Protein_Foods - eatwell_recommendations["Protein_Foods"])^2 +
+      (Dairy_and_Alternatives - eatwell_recommendations["Dairy_and_Alternatives"])^2 +
+      (Oils_and_Spreads - eatwell_recommendations["Oils_and_Spreads"])^2 +
+      (Foods_High_in_Fat_Sugar - eatwell_recommendations["Foods_High_in_Fat_Sugar"])^2
+    )
+  )
+
+print(grocery_data %>%
+  select(Fruit_and_Vegetables, Starchy_Carbohydrates, Protein_Foods,
+         Dairy_and_Alternatives, Oils_and_Spreads, Foods_High_in_Fat_Sugar, euclidean_distance))
 
 ```
+
+
+```{r}
+library(tmap)
+
+vals <- ward_distance_map$euclidean_distance
+vals_no_na <- vals[!is.na(vals)]
+if (length(vals_no_na) < 2) stop("Not enough non-NA euclidean_distance values to map.")
+
+qbreaks <- quantile(vals_no_na, probs = seq(0,1,length.out = 6), na.rm = TRUE) %>% unique()
+if (length(qbreaks) < 2) qbreaks <- pretty(vals_no_na, n = 6)
+qbreaks <- unique(qbreaks)
+cat("Using breaks:\n"); print(qbreaks)
+
+
+n_intervals <- length(qbreaks) - 1
+if (n_intervals < 1) stop("Insufficient unique breaks to form intervals.")
+
+pal_intervals <- colorRampPalette(c("#2ca25f", "#ffffb2", "#f03b20"))(n_intervals)
+
+tm_intervals_fixed <- tm_shape(ward_distance_map) +
+  tm_polygons(
+    fill = "euclidean_distance",
+    col = "grey30",
+    fill.scale = tm_scale_intervals(
+      breaks = qbreaks,
+      values = pal_intervals
+    ),
+    fill.legend = tm_legend(title = "Euclidean distance (Eatwell)")
+  ) +
+  tm_title("Deviation from Eatwell Guide — intervals (green→red)") +
+  tm_compass(position = c("left", "bottom")) +
+  tm_scalebar(position = c("right", "bottom")) +
+  tm_layout(legend.outside = TRUE, frame = FALSE, bg.color = "white")
+
+print(tm_intervals_fixed)
+
+```
+
+```{r}
+library(dplyr)
+
+ward_ranked <- ward_distance_map %>%
+  st_drop_geometry() %>%   
+  select(ward_name, euclidean_distance) %>%
+  arrange(euclidean_distance)
+
+closest_wards <- head(ward_ranked, 10)
+
+furthest_wards <- tail(ward_ranked, 10)
+
+cat("Top 10 wards MOST aligned with the Eatwell Guide:\n")
+print(closest_wards)
+
+cat("\nTop 10 wards LEAST aligned with the Eatwell Guide:\n")
+print(furthest_wards)
+
+```
+```{r}
+
+grocery_data <- read_csv("year_osward_grocery.csv") %>% rename(ward_code = area_id)
+
+wards <- st_read(here("London-wards-2018/London-wards-2018_ESRI/London_Ward_CityMerged.shp")) %>%
+  rename(ward_code = GSS_CODE, ward_name = NAME)
+
+ward_sf <- inner_join(wards, grocery_data, by = "ward_code")
+
+ward_sf <- ward_sf %>%
+  mutate(
+    Fruit_and_Vegetables = f_fruit_veg,
+    Starchy_Carbohydrates = f_grains,
+    Protein_Foods = f_poultry + f_meat_red + f_fish + f_eggs,
+    Dairy_and_Alternatives = f_dairy,
+    Oils_and_Spreads = f_fats_oils,
+    Foods_High_in_Fat_Sugar = f_sweets + f_readymade + f_sauces + f_soft_drinks
+  ) %>%
+  mutate(total_basket = Fruit_and_Vegetables + Starchy_Carbohydrates + Protein_Foods +
+           Dairy_and_Alternatives + Oils_and_Spreads + Foods_High_in_Fat_Sugar) %>%
+  mutate(across(
+    c(Fruit_and_Vegetables, Starchy_Carbohydrates, Protein_Foods,
+      Dairy_and_Alternatives, Oils_and_Spreads, Foods_High_in_Fat_Sugar),
+    ~ ifelse(is.na(total_basket) | total_basket == 0, NA_real_, .x / total_basket)
+  ))
+
+vars <- c(
+  "Fruit_and_Vegetables",
+  "Starchy_Carbohydrates",
+  "Protein_Foods",
+  "Dairy_and_Alternatives",
+  "Oils_and_Spreads",
+  "Foods_High_in_Fat_Sugar"
+)
+
+titles <- c(
+  "Fruit & Vegetables (prop.)",
+  "Starchy Carbohydrates (prop.)",
+  "Protein Foods (prop.)",
+  "Dairy & Alternatives (prop.)",
+  "Oils & Spreads (prop.)",
+  "Foods High in Fat/Sugar (prop.)"
+)
+
+palettes <- c("Greens", "YlOrBr", "PuBu", "BuPu", "OrRd", "Reds")
+
+all_values <- unlist(lapply(vars, function(v) ward_sf[[v]]))
+quantile_breaks <- quantile(all_values, probs = seq(0, 1, length.out = 6), na.rm = TRUE) %>% unique()
+if(length(quantile_breaks) < 2) quantile_breaks <- pretty(all_values, n = 6)
+
+maps_list <- vector("list", length(vars))
+for (i in seq_along(vars)) {
+  v <- vars[i]
+  maps_list[[i]] <- tm_shape(ward_sf) +
+    tm_polygons(
+      fill = v,
+      col = "grey40",                       # outline color
+      fill.scale = tm_scale_intervals(
+        breaks = quantile_breaks,
+        values = palettes[i]
+      ),
+      fill.legend = tm_legend(title = titles[i])
+    ) +
+    tm_layout(
+      frame = FALSE,
+      bg.color = "white",
+      legend.outside = TRUE
+    ) +
+    tm_compass(position = c("left", "top")) +
+    tm_scalebar(position = c("right", "bottom"))
+}
+
+comparison <- tmap_arrange(maps_list[[1]], maps_list[[2]], maps_list[[3]],
+                           maps_list[[4]], maps_list[[5]], maps_list[[6]],
+                           ncol = 2, nrow = 3)
+
+comparison
+
+tmap_save(comparison, filename = "eatwell_groups_comparison.png", width = 2000, height = 3000, dpi = 300)
+
+for (i in seq_along(vars)) {
+  fname <- paste0("map_", i, "_", vars[i], ".png")
+  tmap_save(maps_list[[i]], filename = fname, width = 1200, height = 1000, dpi = 300)
+}
+
+```
+
+
+
+
+```{r}
+maps_list[[1]]
+```
+```{r}
+maps_list[[2]]
+```
+```{r}
+maps_list[[3]]
+```
+```{r}
+maps_list[[4]]
+```
+
+```{r}
+maps_list[[5]]
+```
+
+```{r}
+maps_list[[6]]
+```
+
