@@ -7,7 +7,7 @@ You can paste this directly into a `README.md` file.
 
 # ⭐ **README.md — Project Description**
 
-# **Assessing Dietary Patterns in London Using the NHS Eatwell Guide**
+# **Identifying Public Health Risks Through Dietary Purchase Patterns in London Using NHS Eatwell Guide**
 
 This project analyses grocery purchasing behaviour across London using the **Tesco Grocery 1.0 dataset** and compares it to the UK’s national dietary framework — the **NHS Eatwell Guide**. The aim is to identify **public health risks**, highlight **dietary inequalities**, and understand how closely different London wards follow the recommended balanced diet.
 
