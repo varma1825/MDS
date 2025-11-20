@@ -155,45 +155,102 @@ print(grocery_data %>%
   select(Fruit_and_Vegetables, Starchy_Carbohydrates, Protein_Foods,
          Dairy_and_Alternatives, Oils_and_Spreads, Foods_High_in_Fat_Sugar, euclidean_distance))
 
-```
 
+```
 
 ```{r}
+library(sf)
 library(tmap)
+library(dplyr)
+library(readr)
+library(here)
+library(RColorBrewer)
 
-vals <- ward_distance_map$euclidean_distance
-vals_no_na <- vals[!is.na(vals)]
-if (length(vals_no_na) < 2) stop("Not enough non-NA euclidean_distance values to map.")
+# --- Load and prepare datasets ---
+grocery_data <- read_csv("year_osward_grocery.csv") %>%
+  rename(ward_code = area_id)
 
-qbreaks <- quantile(vals_no_na, probs = seq(0,1,length.out = 6), na.rm = TRUE) %>% unique()
-if (length(qbreaks) < 2) qbreaks <- pretty(vals_no_na, n = 6)
-qbreaks <- unique(qbreaks)
-cat("Using breaks:\n"); print(qbreaks)
+wards <- st_read(here("London-wards-2018/London-wards-2018_ESRI/London_Ward_CityMerged.shp")) %>%
+  rename(ward_code = GSS_CODE, ward_name = NAME)
 
+ward_distance_map <- inner_join(wards, grocery_data, by = "ward_code")
 
-n_intervals <- length(qbreaks) - 1
-if (n_intervals < 1) stop("Insufficient unique breaks to form intervals.")
+# --- Euclidean distance (your logic) ---
+ward_distance_map <- ward_distance_map %>%
+  mutate(
+    Fruit_and_Vegetables = f_fruit_veg,
+    Starchy_Carbohydrates = f_grains,
+    Protein_Foods = f_poultry + f_meat_red + f_fish + f_eggs,
+    Dairy_and_Alternatives = f_dairy,
+    Oils_and_Spreads = f_fats_oils,
+    Foods_High_in_Fat_Sugar = f_sweets + f_readymade + f_sauces + f_soft_drinks,
+    total_basket = Fruit_and_Vegetables + Starchy_Carbohydrates +
+                   Protein_Foods + Dairy_and_Alternatives +
+                   Oils_and_Spreads + Foods_High_in_Fat_Sugar
+  ) %>%
+  mutate(across(
+    c(Fruit_and_Vegetables, Starchy_Carbohydrates, Protein_Foods,
+      Dairy_and_Alternatives, Oils_and_Spreads, Foods_High_in_Fat_Sugar),
+    ~ .x / total_basket
+  )) %>%
+  mutate(
+    euclidean_distance = sqrt(
+      (Fruit_and_Vegetables - 0.33)^2 +
+      (Starchy_Carbohydrates - 0.33)^2 +
+      (Protein_Foods - 0.12)^2 +
+      (Dairy_and_Alternatives - 0.15)^2 +
+      (Oils_and_Spreads - 0.07)^2 +
+      (Foods_High_in_Fat_Sugar - 0.05)^2
+    )
+  )
 
-pal_intervals <- colorRampPalette(c("#2ca25f", "#ffffb2", "#f03b20"))(n_intervals)
+# --- Breaks ---
+breaks <- quantile(ward_distance_map$euclidean_distance,
+                   probs = seq(0, 1, length.out = 6),
+                   na.rm = TRUE) %>% unique()
 
-tm_intervals_fixed <- tm_shape(ward_distance_map) +
+if(length(breaks) < 2) {
+  breaks <- pretty(ward_distance_map$euclidean_distance, n = 6)
+}
+
+n_intervals <- length(breaks) - 1  # number of colour classes
+
+# --- CUSTOM COLOURS (your request) ---
+pal <- c(
+  brewer.pal(9, "Greens")[3],
+  brewer.pal(9, "YlOrBr")[5],
+  brewer.pal(9, "PuBu")[5],
+  "#2171B5",       # blue
+  "#FD8D3C",       # orange
+  "red"            # red
+)
+
+# tmap requires palette length == number of intervals
+pal <- colorRampPalette(pal)(n_intervals)
+
+# --- Map ---
+tm_shape(ward_distance_map) +
   tm_polygons(
     fill = "euclidean_distance",
-    col = "grey30",
+    col = "grey40",
     fill.scale = tm_scale_intervals(
-      breaks = qbreaks,
-      values = pal_intervals
+      breaks = breaks,
+      values = pal
     ),
-    fill.legend = tm_legend(title = "Euclidean distance (Eatwell)")
+    fill.legend = tm_legend(title = "Euclidean distance\n(from Eatwell Guide)")
   ) +
-  tm_title("Deviation from Eatwell Guide — intervals (green→red)") +
+  tm_title("Deviation from Eatwell Dietary Recommendations by Ward") +
   tm_compass(position = c("left", "bottom")) +
   tm_scalebar(position = c("right", "bottom")) +
-  tm_layout(legend.outside = TRUE, frame = FALSE, bg.color = "white")
-
-print(tm_intervals_fixed)
+  tm_layout(
+    legend.outside = TRUE,
+    frame = FALSE,
+    bg.color = "grey95"
+  )
 
 ```
+
+
 
 ```{r}
 library(dplyr)
