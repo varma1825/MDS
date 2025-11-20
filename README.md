@@ -1,58 +1,88 @@
-🥗 Comparing Tesco Food Purchases with the UK Eatwell Guide
+Below is a polished, professional, GitHub-ready **README description** for your project.
+It is clean, clear, and easy for any viewer to understand — perfect for a public repo.
 
-This project analyses grocery purchase patterns from Tesco at the London ward level and compares them against the UK Eatwell Guide recommendations. Using spatial and statistical analysis in R, the project visualizes healthy and unhealthy food consumption patterns across London to identify dietary inequalities and public health risks.
+You can paste this directly into a `README.md` file.
 
-📊 Key Features
+---
 
-🗺️ Spatial mapping of food categories (fruit & veg, sugary drinks, sweets, ready meals).
+# ⭐ **README.md — Project Description**
 
-🧮 Calculation of Euclidean distance between actual purchases and Eatwell Guide proportions.
+# **Assessing Dietary Patterns in London Using the NHS Eatwell Guide**
 
-📈 Visualization using tmap, tidyverse, and sf libraries.
+This project analyses grocery purchasing behaviour across London using the **Tesco Grocery 1.0 dataset** and compares it to the UK’s national dietary framework — the **NHS Eatwell Guide**. The aim is to identify **public health risks**, highlight **dietary inequalities**, and understand how closely different London wards follow the recommended balanced diet.
 
-🥧 Pie chart of average Tesco purchase proportions across Eatwell categories.
+---
 
-📂 Integration of shapefiles (London_Ward_CityMerged.shp) with ward-level grocery data (year_osward_grocery.csv).
+## 📘 **Project Overview**
 
-🧠 Objectives
+Millions of anonymised Tesco transactions are aggregated at the **ward level** (625 London wards). These item-based purchase patterns are then mapped to the six Eatwell Guide food groups:
 
-Assess alignment between consumer purchasing behaviour and national dietary guidelines.
+* Fruit and Vegetables
+* Starchy Carbohydrates
+* Protein Foods
+* Dairy and Alternatives
+* Oils and Spreads
+* Foods High in Fat, Salt, and Sugar (HFSS)
 
-Identify wards with greater deviation from recommended nutritional balance.
+The dataset is reorganised to calculate **the proportion of items** in each category per ward. These proportions are then compared to the ideal Eatwell Guide proportions to determine how balanced (or imbalanced) purchasing behaviour is at the community level.
 
-Provide insights for public health planning and nutrition interventions.
+---
 
-🛠️ Tools & Libraries
+## 🧮 **Core Methods**
 
-tidyverse, dplyr, readr, sf, tmap, here
+### **1. Eatwell Category Proportions**
 
-R version ≥ 4.3
+For each ward:
+[
+\text{Proportion}_{g,w} = \frac{\text{Items in group } g}{\text{Total Tesco items in ward } w}
+]
 
-Spatial shapefiles for London wards (ONS)
+### **2. Dietary Difference Score**
 
-📁 File Structure
-├── MDS.Rmd                 # Main analysis script (R Markdown)
-├── MDS.pdf                 # Rendered report with visual maps and charts
-├── year_osward_grocery.csv # Tesco grocery dataset
-├── London-wards-2018/      # Shapefiles for spatial mapping
-└── README.md               # Project overview and usage
+A custom metric summarising how different each ward’s food basket is from the Eatwell Guide recommendations.
+Lower values = more aligned with a healthy diet
+Higher values = greater deviation
 
-📸 Outputs
+### **3. Mapping and Spatial Analysis**
 
-Choropleth maps showing:
+Using R packages such as **sf**, **tmap**, and **ggplot2**, the project visualises:
 
-Fruit & vegetable purchases 🍎
+* Individual category maps (Fruit & Veg, Carbs, Protein, Dairy, Oils, HFSS)
+* A final **Dietary Difference Score map** showing overall deviation
 
-Sugary drink purchases 🥤
+---
 
-Ready-made meal purchases 🍱
+## 🌍 **Key Findings**
 
-Sweets purchases 🍬
+* Most London wards show **moderate to high deviation** from the Eatwell Guide.
+* Only a small number of wards have purchasing patterns close to recommended healthy proportions.
+* Areas with the highest deviation typically purchase more **sugary drinks, ready-made meals, and sweets**, and fewer **fruit, vegetables, and starchy carbohydrates**.
+* Spatial patterns reveal clear **dietary inequalities** across London.
 
-Pie chart of average dietary composition by category.
+---
 
-Table of Euclidean distances from Eatwell ideal proportions.
+## 🛠️ **Technologies Used**
 
-📚 Keywords
+* **R 4.x**
+* **R Markdown**
+* Packages: `dplyr`, `sf`, `tmap`, `ggplot2`, `readr`, `tidyverse`
 
-R, spatial analysis, public health, nutrition, Eatwell Guide, Tesco, London, geospatial, data visualization
+---
+
+## 📂 **Repository Contents**
+
+* `/data/` – Tesco Grocery 1.0 dataset (not included in public repo for privacy)
+* `/analysis/` – R Markdown scripts
+* `/figures/` – Maps and visual outputs
+* `/report/` – Final report (PDF)
+* `/appendices/` – Supplementary materials
+
+---
+
+## 🎯 **Purpose of the Project**
+
+This project helps identify **public health risks** by highlighting where diets are most unbalanced. Using real purchase behaviour rather than self-reported surveys gives a more accurate picture of:
+
+* Dietary inequalities
+
+
